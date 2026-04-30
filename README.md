@@ -128,7 +128,7 @@ cd ~/fabric/fabric-samples
 git clone https://github.com/faiyaz029/fabric.git fabcar
 ```
 
-> Replace `YOUR_USERNAME/YOUR_REPO_NAME` with the actual GitHub repository URL.
+
 
 ### Step 3: Clean any old Docker state
 
