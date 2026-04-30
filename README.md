@@ -1,136 +1,144 @@
 # 🖥️ University IT Asset Management System
-### Built on Hyperledger Fabric (Based on FabCar Lab)
+### Decentralized App on Hyperledger Fabric | Based on FabCar Lab
 
-A decentralized application for tracking university IT equipment (laptops, projectors, monitors, etc.) on a blockchain ledger using Hyperledger Fabric.
+A blockchain-based application to track university IT equipment (Laptops, Monitors, Projectors, etc.) using Hyperledger Fabric and CouchDB.
 
----
 
-## 📋 Table of Contents
-- [What Changed from FabCar](#-what-changed-from-fabcar)
-- [Prerequisites](#-prerequisites)
-- [Project Structure](#-project-structure)
-- [How to Run (First Time Setup)](#-how-to-run-first-time-setup)
-- [How to Restart](#-how-to-restart-the-server)
-- [How to Stop](#-how-to-stop-the-network)
-- [API Endpoints](#-api-endpoints)
-- [Features](#-features)
 
 ---
 
-## 🔄 What Changed from FabCar
+## 📁 What's in This Repository
 
-This project is a modification of the FabCar lab. Below is a clear comparison of every change made.
+```
+fabric/
+├── sample/              ← The fabcar application (chaincode + API + frontend)
+│   ├── chaincode-javascript/lib/fabcar.js   ← Smart contract
+│   ├── api-server/                          ← Backend Node.js API
+│   │   ├── index.js
+│   │   ├── query.js
+│   │   ├── createAsset.js
+│   │   ├── updateAsset.js
+│   │   ├── enrollAdmin.js
+│   │   └── registerUser.js
+│   └── fabcar-client/index.html             ← Frontend UI
+├── install              ← Fabric install helper script
+└── README.md            ← This file
+```
 
-### Files Modified
+> ⚠️ This repo contains only the **application code**. You must install Hyperledger Fabric binaries and Docker images separately (see Step 2 below).
 
-| File | FabCar (Original) | IT Asset System (Modified) |
-|------|-------------------|---------------------------|
-| `chaincode-javascript/lib/fabcar.js` | Manages Car objects (color, make, model, owner) | Manages IT Asset objects (deviceType, brand, purchaseYear, department, assignedTo) |
-| `api-server/index.js` | Routes for cars: GET /api/queryallcars, POST /api/createcar, PUT /api/changecarowner | Routes for assets: GET /api/assets, POST /api/assets, PUT /api/assets/:id, GET /api/assets/search/department/:dept, GET /api/assets/search/devicetype/:type |
-| `api-server/query.js` | Only queries all cars or by car ID | Queries all assets, by ID, by department, or by device type |
-| `fabcar-client/index.html` | UI for cars (color, make, model, owner fields) | UI for IT assets (deviceType, brand, purchaseYear, department, assignedTo fields) |
+---
 
-### Files Added (New)
+## 🔄 What Changed from the Original FabCar Lab
+
+### Modified Files
+
+| File | Original FabCar | This Project |
+|------|----------------|--------------|
+| `chaincode-javascript/lib/fabcar.js` | Car data (color, make, model, owner) | IT Asset data (deviceType, brand, purchaseYear, department, assignedTo) |
+| `api-server/index.js` | Car API routes | Asset API routes (create, read, update, search) |
+| `api-server/query.js` | Query cars only | Query by ID, department, or device type |
+| `fabcar-client/index.html` | Car management UI | IT Asset management UI |
+
+### New Files Added
 
 | File | Purpose |
 |------|---------|
-| `api-server/createAsset.js` | Replaces `createCar.js` — submits a new IT asset to the ledger |
-| `api-server/updateAsset.js` | Replaces `changeOwner.js` — updates the `assignedTo` field of an asset |
+| `api-server/createAsset.js` | Submit a new IT asset to the ledger |
+| `api-server/updateAsset.js` | Update who an asset is assigned to |
 
-### Files NOT Changed (as required by project spec)
+### Files NOT Changed (as required by assignment)
 
-| File | Reason |
-|------|--------|
-| `api-server/enrollAdmin.js` | Not to be modified per project instructions |
-| `api-server/registerUser.js` | Not to be modified per project instructions |
-| `startFabric.sh` | Network configuration — not modified |
-| `networkDown.sh` | Network configuration — not modified |
+`enrollAdmin.js`, `registerUser.js`, `startFabric.sh`, `networkDown.sh` — untouched.
 
-### Chaincode Changes in Detail
+### New Chaincode Functions vs FabCar
 
-| Feature | FabCar | IT Asset System |
-|---------|--------|-----------------|
-| Data fields | color, make, model, owner | deviceType, brand, purchaseYear, department, assignedTo |
-| Create function | `createCar()` | `createAsset()` |
-| Update function | `changeCarOwner()` | `updateAssignedTo()` |
-| Search by department | ❌ Not available | ✅ `queryAssetsByDepartment()` using CouchDB |
-| Search by device type | ❌ Not available | ✅ `queryAssetsByDeviceType()` using CouchDB |
-| Query by ID | ✅ `queryCar()` | ✅ `queryAsset()` |
-| Query all | ✅ `queryAllCars()` | ✅ `queryAllAssets()` |
+| Function | FabCar | This Project |
+|----------|--------|--------------|
+| Create | `createCar()` | `createAsset()` |
+| Read All | `queryAllCars()` | `queryAllAssets()` |
+| Read One | `queryCar(id)` | `queryAsset(id)` |
+| Update | `changeCarOwner()` | `updateAssignedTo()` |
+| Search by Department | ❌ | ✅ `queryAssetsByDepartment()` |
+| Search by Device Type | ❌ | ✅ `queryAssetsByDeviceType()` |
 
 ---
 
 ## ✅ Prerequisites
 
-Before running this project, make sure you have the following installed:
+Install these before anything else:
 
-- **Ubuntu 20.04 / 22.04** (recommended)
-- **Git** — `sudo apt-get install git`
-- **Docker** — v20.x or higher
-- **Docker Compose** — v1.29.2
-- **Node.js** — v18.x (strongly recommended)
-- **npm** — comes with Node.js
-- **Hyperledger Fabric v2.5** binaries and docker images
-- **jq** — `sudo apt-get install jq`
+| Tool | Version | Install Command |
+|------|---------|-----------------|
+| Git | Any | `sudo apt-get install git` |
+| jq | Any | `sudo apt-get install jq` |
+| Docker | 20.x+ | See below |
+| Docker Compose | 1.29.2 | See below |
+| Node.js | **v18.x** (important!) | See below |
+| npm | comes with Node | — |
 
-> ⚠️ Do NOT use Node.js v20+ or v24+. Use Node.js v18 for best compatibility with fabric-network SDK.
+### Install Docker
+```bash
+sudo apt-get update
+sudo apt-get install apt-transport-https ca-certificates gnupg-agent software-properties-common lsb-release -y
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+sudo apt-get install docker-ce docker-ce-cli containerd.io -y
+sudo groupadd docker
+sudo usermod -a -G docker $USER
+newgrp docker
+```
 
-To install Node.js v18:
+### Install Docker Compose
+```bash
+sudo curl -L https://github.com/docker/compose/releases/download/1.29.2/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+docker-compose --version
+```
+
+### Install Node.js v18
 ```bash
 curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
 sudo apt-get install -y nodejs
+node --version   # should show v18.x.x
 ```
 
 ---
 
-## 📁 Project Structure
+## 🚀 First Time Setup (New User)
 
-```
-fabcar/
-├── chaincode-javascript/
-│   └── lib/
-│       └── fabcar.js          ← Smart contract (chaincode) — MODIFIED
-├── api-server/
-│   ├── enrollAdmin.js         ← DO NOT TOUCH
-│   ├── registerUser.js        ← DO NOT TOUCH
-│   ├── index.js               ← Express API server — MODIFIED
-│   ├── query.js               ← Query handler — MODIFIED
-│   ├── createAsset.js         ← NEW FILE
-│   ├── updateAsset.js         ← NEW FILE
-│   └── package.json
-├── fabcar-client/
-│   └── index.html             ← Frontend UI — MODIFIED
-├── startFabric.sh
-└── networkDown.sh
-```
+Follow every step in order.
 
----
-
-## 🚀 How to Run (First Time Setup)
-
-Follow these steps **in order** on a fresh machine.
-
-### Step 1: Install Hyperledger Fabric
+### Step 1: Clone this repository
 
 ```bash
-mkdir ~/fabric && cd ~/fabric
+git clone https://github.com/faiyaz029/fabric.git
+cd fabric
+```
+
+### Step 2: Install Hyperledger Fabric binaries and Docker images
+
+```bash
+mkdir -p ~/fabric && cd ~/fabric
 curl -sSLO https://raw.githubusercontent.com/hyperledger/fabric/main/scripts/install-fabric.sh
 chmod +x install-fabric.sh
 ./install-fabric.sh
 ```
 
-This creates `~/fabric/fabric-samples/` with all required binaries.
+This creates `~/fabric/fabric-samples/` directory with all Fabric binaries.
 
-### Step 2: Clone this repository
+> ⏳ This takes time depending on your internet speed. Wait for it to fully complete.
+
+### Step 3: Copy the application into fabric-samples
 
 ```bash
-cd ~/fabric/fabric-samples
-git clone https://github.com/faiyaz029/fabric.git fabcar
+cp -r ~/fabric/fabric/sample ~/fabric/fabric-samples/fabcar
 ```
 
+> This puts the project code where Fabric expects it.
 
-
-### Step 3: Clean any old Docker state
+### Step 4: Clean any leftover Docker state
 
 ```bash
 docker stop $(docker ps -aq) 2>/dev/null || true
@@ -139,36 +147,40 @@ docker volume prune -f
 docker network prune -f
 ```
 
-### Step 4: Start the Fabric network and deploy chaincode
+### Step 5: Start the Fabric network
 
 ```bash
 cd ~/fabric/fabric-samples/test-network
-
-# Remove any leftover crypto/channel artifacts
-rm -rf channel-artifacts/ organizations/peerOrganizations/ organizations/ordererOrganizations/
-
-# Start network with CouchDB (required for rich queries)
 ./network.sh up createChannel -ca -s couchdb
+```
 
-# Wait for peers to fully start
-sleep 10
+Wait until you see:
+```
+Channel 'mychannel' created
+Successfully submitted proposal to join channel   ← appears twice
+```
 
-# Deploy the chaincode
+Then wait for peers to fully initialize:
+```bash
+sleep 15
+```
+
+### Step 6: Deploy the chaincode
+
+```bash
 ./network.sh deployCC -ccn fabcar -ccp ../fabcar/chaincode-javascript -ccl javascript
 ```
 
-### Step 5: Install dependencies and start the API server
+Wait for it to finish. You should see `Chaincode deployment successful`.
+
+### Step 7: Install dependencies and start the API server
 
 ```bash
 cd ~/fabric/fabric-samples/fabcar/api-server
 npm install
 npm install morgan
-
-# Enroll admin and register user
 node enrollAdmin.js
 node registerUser.js
-
-# Start the backend server
 npm start
 ```
 
@@ -177,50 +189,51 @@ You should see:
 IT Asset API running on port 8080
 ```
 
-### Step 6: Open the frontend
+**Leave this terminal running.**
 
-Open `fabcar-client/index.html` in VS Code and click **"Go Live"** from the Live Server extension (bottom-right of VS Code).
+### Step 8: Open the frontend
 
-Your browser will open the IT Asset Management UI at `http://127.0.0.1:5500`.
+- Open VS Code
+- Open the file `fabcar-client/index.html`
+- Click **Go Live** at the bottom-right of VS Code (requires Live Server extension)
+- Browser opens at `http://127.0.0.1:5500`
+
+✅ **You are ready to use the application!**
 
 ---
 
-## 🔄 How to Restart the Server
+## 🔄 How to Restart (After PC Reboot or Network Stopped)
 
-If the API server is stopped (e.g., you closed the terminal) but the **Fabric network is still running** (Docker containers still up):
-
-```bash
-# Check if network is still running
-docker ps | grep peer
-
-# If you see peer containers, just restart the API:
-cd ~/fabric/fabric-samples/fabcar/api-server
-npm start
-```
-
-If the **network was stopped** (e.g., PC was rebooted):
+Run this single block — it cleans everything and starts fresh:
 
 ```bash
-# Full restart — run these in order:
-
+# === CLEAN ===
 cd ~/fabric/fabric-samples/test-network
-./network.sh down
+./network.sh down 2>/dev/null || true
+docker stop $(docker ps -aq) 2>/dev/null || true
+docker rm $(docker ps -aq) 2>/dev/null || true
 docker volume rm compose_orderer.example.com compose_peer0.org1.example.com compose_peer0.org2.example.com 2>/dev/null || true
 docker volume prune -f
-rm -rf channel-artifacts/ organizations/peerOrganizations/ organizations/ordererOrganizations/
+docker network prune -f
+docker rmi $(docker images | grep 'dev-peer' | awk '{print $3}') 2>/dev/null || true
+rm -rf channel-artifacts/
+rm -rf organizations/peerOrganizations/
+rm -rf organizations/ordererOrganizations/
+rm -rf ~/fabric/fabric-samples/fabcar/api-server/wallet/
 
+# === START NETWORK ===
 ./network.sh up createChannel -ca -s couchdb
-sleep 10
+sleep 15
+
+# === DEPLOY CHAINCODE ===
 ./network.sh deployCC -ccn fabcar -ccp ../fabcar/chaincode-javascript -ccl javascript
 
+# === START API ===
 cd ~/fabric/fabric-samples/fabcar/api-server
-rm -rf wallet/
 node enrollAdmin.js
 node registerUser.js
 npm start
 ```
-
-> ⚠️ Always delete the `wallet/` folder when restarting the network from scratch, otherwise you'll get credential errors.
 
 ---
 
@@ -235,16 +248,16 @@ cd ~/fabric/fabric-samples/fabcar
 
 ## 🌐 API Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/assets` | Get all IT assets |
-| GET | `/api/assets/:id` | Get asset by unique ID (e.g. ASSET001) |
-| GET | `/api/assets/search/department/:dept` | Get all assets in a department (e.g. CSE) |
-| GET | `/api/assets/search/devicetype/:type` | Get all assets of a type (e.g. Laptop) |
-| POST | `/api/assets` | Create a new asset |
-| PUT | `/api/assets/:id` | Update the assignedTo field of an asset |
+| Method | URL | Description |
+|--------|-----|-------------|
+| GET | `http://localhost:8080/api/assets` | Get all IT assets |
+| GET | `http://localhost:8080/api/assets/ASSET001` | Get one asset by ID |
+| GET | `http://localhost:8080/api/assets/search/department/CSE` | Get all assets in a department |
+| GET | `http://localhost:8080/api/assets/search/devicetype/Laptop` | Get all assets of a type |
+| POST | `http://localhost:8080/api/assets` | Add a new asset |
+| PUT | `http://localhost:8080/api/assets/ASSET001` | Update assigned person |
 
-### POST Body Example (Create Asset)
+### POST Example Body
 ```json
 {
   "assetId": "ASSET006",
@@ -256,7 +269,7 @@ cd ~/fabric/fabric-samples/fabcar
 }
 ```
 
-### PUT Body Example (Update Assignee)
+### PUT Example Body
 ```json
 {
   "assignedTo": "Dr. New Person"
@@ -267,30 +280,40 @@ cd ~/fabric/fabric-samples/fabcar
 
 ## ✨ Features
 
-- **Create**: Add new IT assets to the blockchain ledger
-- **Read All**: View all registered assets across the university
-- **Update**: Transfer an asset from one faculty/staff to another
-- **Search by ID**: Look up a specific asset (e.g. ASSET001)
-- **Search by Department**: Find all assets in a department (e.g. CSE, EEE)
-- **Search by Device Type**: Find all assets of a type (e.g. all Projectors)
+- ➕ **Create** — Add new IT assets to the blockchain ledger
+- 📋 **Read All** — View all assets across the university
+- ✏️ **Update** — Transfer an asset to a different faculty/staff member
+- 🔍 **Search by Asset ID** — Look up a specific asset (e.g. ASSET001)
+- 🔍 **Search by Department** — Find all assets in a department (e.g. CSE, EEE, BBA)
+- 🔍 **Search by Device Type** — Find all assets of a specific type (e.g. all Projectors)
 
 ---
 
-## 🐛 Common Errors & Fixes
+## 🐛 Common Errors and Fixes
 
-| Error | Fix |
-|-------|-----|
-| `Cannot find module 'morgan'` | Run `npm install morgan` inside `api-server/` |
-| `ledger already exists` | Delete volumes: `docker volume prune -f` and delete `channel-artifacts/` and `organizations/` folders |
-| `connection refused on port 7051` | Peer not ready yet — wait 10 seconds after `network.sh up` before deploying chaincode |
-| `Cannot find module './createAsset'` | Create `createAsset.js` and `updateAsset.js` files in `api-server/` (see project files) |
-| Wallet errors after network restart | Delete `api-server/wallet/` folder, then re-run `enrollAdmin.js` and `registerUser.js` |
+| Error Message | Fix |
+|--------------|-----|
+| `Cannot find module 'morgan'` | `npm install morgan` inside `api-server/` |
+| `ledger already exists` | Run the full clean restart block above |
+| `connection refused port 7051` | Run `sleep 15` after network starts, then retry deployCC |
+| `channel already exists (405)` | Run `docker volume prune -f` and delete `channel-artifacts/` and `organizations/` folders |
+| `Cannot find module './createAsset'` | `createAsset.js` is missing in `api-server/` — check all files were copied |
+| Wallet / credential errors | Delete `api-server/wallet/` folder then re-run `enrollAdmin.js` and `registerUser.js` |
+| `After 5 attempts, peer failed to join` | Add `sleep 15` after `network.sh up` before deploying chaincode |
 
 ---
 
-## 📝 Notes
+## 📝 Important Notes
 
-- This project uses **CouchDB** as the state database, which enables rich queries (search by department, device type).
-- The chaincode name is `fabcar` (kept same as original to avoid config changes).
-- The API runs on **port 8080**.
-- The frontend uses plain HTML/JS and communicates with the API via `fetch()`.
+- **Node.js v18** is required. v20+ or v24+ cause compatibility issues with the Fabric SDK.
+- **CouchDB** is required for the search-by-department and search-by-device-type features (rich queries).
+- The chaincode is internally named `fabcar` to stay compatible with the original lab config.
+- The API server runs on **port 8080**.
+- Always **delete the wallet folder** when restarting the network from scratch.
+
+---
+
+## 👨‍💻 Author
+
+**Faiyaz** — University IT Asset Management System
+Built as part of Hyperledger Fabric Lab Project (SP26)
