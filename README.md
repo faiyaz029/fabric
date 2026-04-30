@@ -313,7 +313,7 @@ cd ~/fabric/fabric-samples/fabcar
 
 ---
 
-## 👨‍💻 Author
+##  Author
 
 **Faiyaz** — University IT Asset Management System
-Built as part of Hyperledger Fabric Lab Project (SP26)
+Built as part of Hyperledger Fabric Lab Final Project (SP26)
