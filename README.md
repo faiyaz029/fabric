@@ -311,9 +311,3 @@ cd ~/fabric/fabric-samples/fabcar
 - The API server runs on **port 8080**.
 - Always **delete the wallet folder** when restarting the network from scratch.
 
----
-
-##  Author
-
-**Faiyaz** — University IT Asset Management System
-Built as part of Hyperledger Fabric Lab Final Project (SP26)
