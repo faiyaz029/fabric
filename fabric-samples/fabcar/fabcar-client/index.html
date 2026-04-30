@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>University IT Asset Management</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 20px; background: #f4f4f4; }
+        h1 { color: #2c3e50; text-align: center; }
+        h2 { color: #34495e; border-bottom: 2px solid #3498db; padding-bottom: 5px; }
+        .section { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        input, select { padding: 8px; margin: 5px; border: 1px solid #ccc; border-radius: 4px; width: 200px; }
+        button { padding: 8px 16px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2980b9; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background: #3498db; color: white; padding: 10px; }
+        td { padding: 8px; border: 1px solid #ddd; text-align: center; }
+        tr:nth-child(even) { background: #f2f2f2; }
+        #message { color: green; font-weight: bold; margin: 10px 0; }
+        #error { color: red; font-weight: bold; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>🖥️ University IT Asset Management</h1>
+    <div id="message"></div>
+    <div id="error"></div>
+
+    <!-- VIEW ALL -->
+    <div class="section">
+        <h2>📋 All IT Assets</h2>
+        <button onclick="loadAllAssets()">Load All Assets</button>
+        <div id="allAssetsTable"></div>
+    </div>
+
+    <!-- SEARCH -->
+    <div class="section">
+        <h2>🔍 Search Assets</h2>
+        <div>
+            <strong>By Asset ID:</strong>
+            <input type="text" id="searchId" placeholder="e.g. ASSET001">
+            <button onclick="searchById()">Search</button>
+        </div>
+        <div style="margin-top:10px">
+            <strong>By Department:</strong>
+            <input type="text" id="searchDept" placeholder="e.g. CSE">
+            <button onclick="searchByDept()">Search</button>
+        </div>
+        <div style="margin-top:10px">
+            <strong>By Device Type:</strong>
+            <input type="text" id="searchType" placeholder="e.g. Laptop">
+            <button onclick="searchByType()">Search</button>
+        </div>
+        <div id="searchResultTable"></div>
+    </div>
+
+    <!-- CREATE -->
+    <div class="section">
+        <h2>➕ Add New IT Asset</h2>
+        <input type="text" id="newId" placeholder="Asset ID (e.g. ASSET006)">
+        <input type="text" id="newDeviceType" placeholder="Device Type">
+        <input type="text" id="newBrand" placeholder="Brand">
+        <input type="text" id="newYear" placeholder="Purchase Year">
+        <input type="text" id="newDept" placeholder="Department">
+        <input type="text" id="newAssignedTo" placeholder="Assigned To">
+        <br>
+        <button onclick="createAsset()">Add Asset</button>
+    </div>
+
+    <!-- UPDATE -->
+    <div class="section">
+        <h2>✏️ Update Assigned Person</h2>
+        <input type="text" id="updateId" placeholder="Asset ID (e.g. ASSET001)">
+        <input type="text" id="updateAssignee" placeholder="New Assignee Name">
+        <button onclick="updateAsset()">Update</button>
+    </div>
+
+    <script>
+        const API = 'http://localhost:8080/api';
+
+        function showMsg(msg) {
+            document.getElementById('message').innerText = msg;
+            document.getElementById('error').innerText = '';
+        }
+        function showErr(msg) {
+            document.getElementById('error').innerText = msg;
+            document.getElementById('message').innerText = '';
+        }
+
+        function buildTable(data) {
+            if (!data || data.length === 0) return '<p>No assets found.</p>';
+            let html = `<table><tr>
+                <th>Asset ID</th><th>Device Type</th><th>Brand</th>
+                <th>Purchase Year</th><th>Department</th><th>Assigned To</th>
+            </tr>`;
+            data.forEach(item => {
+                const r = item.Record || item;
+                const key = item.Key || 'N/A';
+                html += `<tr>
+                    <td>${key}</td>
+                    <td>${r.deviceType}</td>
+                    <td>${r.brand}</td>
+                    <td>${r.purchaseYear}</td>
+                    <td>${r.department}</td>
+                    <td>${r.assignedTo}</td>
+                </tr>`;
+            });
+            html += '</table>';
+            return html;
+        }
+
+        async function loadAllAssets() {
+            try {
+                const res = await fetch(`${API}/assets`);
+                const data = await res.json();
+                document.getElementById('allAssetsTable').innerHTML = buildTable(data);
+            } catch (e) { showErr('Error: ' + e.message); }
+        }
+
+        async function searchById() {
+            const id = document.getElementById('searchId').value.trim();
+            if (!id) return showErr('Please enter an Asset ID.');
+            try {
+                const res = await fetch(`${API}/assets/${id}`);
+                const data = await res.json();
+                if (data.error) return showErr(data.error);
+                // single asset returned as object
+                document.getElementById('searchResultTable').innerHTML = buildTable([{ Key: id, Record: data }]);
+            } catch (e) { showErr('Error: ' + e.message); }
+        }
+
+        async function searchByDept() {
+            const dept = document.getElementById('searchDept').value.trim();
+            if (!dept) return showErr('Please enter a department.');
+            try {
+                const res = await fetch(`${API}/assets/search/department/${dept}`);
+                const data = await res.json();
+                document.getElementById('searchResultTable').innerHTML = buildTable(data);
+            } catch (e) { showErr('Error: ' + e.message); }
+        }
+
+        async function searchByType() {
+            const type = document.getElementById('searchType').value.trim();
+            if (!type) return showErr('Please enter a device type.');
+            try {
+                const res = await fetch(`${API}/assets/search/devicetype/${type}`);
+                const data = await res.json();
+                document.getElementById('searchResultTable').innerHTML = buildTable(data);
+            } catch (e) { showErr('Error: ' + e.message); }
+        }
+
+        async function createAsset() {
+            const body = {
+                assetId: document.getElementById('newId').value.trim(),
+                deviceType: document.getElementById('newDeviceType').value.trim(),
+                brand: document.getElementById('newBrand').value.trim(),
+                purchaseYear: document.getElementById('newYear').value.trim(),
+                department: document.getElementById('newDept').value.trim(),
+                assignedTo: document.getElementById('newAssignedTo').value.trim()
+            };
+            if (!body.assetId || !body.deviceType || !body.brand) return showErr('Please fill all fields.');
+            try {
+                const res = await fetch(`${API}/assets`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const data = await res.json();
+                if (data.error) return showErr(data.error);
+                showMsg('✅ ' + data.message);
+            } catch (e) { showErr('Error: ' + e.message); }
+        }
+
+        async function updateAsset() {
+            const id = document.getElementById('updateId').value.trim();
+            const assignedTo = document.getElementById('updateAssignee').value.trim();
+            if (!id || !assignedTo) return showErr('Please fill both fields.');
+            try {
+                const res = await fetch(`${API}/assets/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ assignedTo })
+                });
+                const data = await res.json();
+                if (data.error) return showErr(data.error);
+                showMsg('✅ ' + data.message);
+            } catch (e) { showErr('Error: ' + e.message); }
+        }
+    </script>
+</body>
+</html>
